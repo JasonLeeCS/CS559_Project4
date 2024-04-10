@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Everyday I Pray for a 4</title>
+<style>
+  .nitrous-button {
+    display: inline-block;
+    margin: 5px;
+  }
+  .nitrous-bar {
+    width: 100px;
+    height: 10px;
+    background-color: #ccc;
+    margin-bottom: 5px;
+    position: relative;
+  }
+  .nitrous-bar-inner {
+    height: 100%;
+    background-color: #4caf50;
+    position: absolute;
+    width: 100
+  }
+  @keyframes rainbow {
+    0% { color: red; }
+    14% { color: orange; }
+    28% { color: yellow; }
+    42% { color: green; }
+    57% { color: blue; }
+    71% { color: indigo; }
+    85% { color: violet; }
+    100% { color: red; }
+  }
+  .rainbow-text {
+    animation: rainbow 4s linear infinite;
+    display: inline;
+    margin: 0;
+    padding: 0;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="raceCanvas" width="800" height="600"></canvas>
+<!-- Slider for curve adjustment -->
+<label for="curveSlider">Adjust Tr   
+    <span class="rainbow-text">4</span>
+    ck Curve:</label> <span id="curveValue"></span>
+<input type="range" min="1" max="100" value="50" id="curveSlider">
+<!-- Nitrous buttons -->
+<div id="nitrousBarCar1" class ="nitrous-bar"></div>
+<button id="nitrousCar1" class="nitrous-button">Red c
+    <span class="rainbow-text">4</span>
+    r NITROUS (Press D to use)</button>
+<button id="breaksCar1" class="nitrous-button">Red c
+    <span class="rainbow-text">4</span>
+    r BRE 
+    <span class="rainbow-text">4</span>
+    KS (Press C to use)</button>
+<div id="nitrousBarCar2" class ="nitrous-bar"></div>
+<button id="nitrousCar2" class="nitrous-button">Blue c
+    <span class="rainbow-text">4</span>
+    r NITROUS (Press A to use)</button>
+<button id="breaksCar2" class="nitrous-button">Blue c
+    <span class="rainbow-text">4</span>
+    r BRE
+    <span class="rainbow-text">4</span>
+    KS (Press Z to use)</button>
+<div id="lapCounterCar1">Red C4R Laps: 0</div>
+<div id="lapCounterCar2">Blue C4R Laps: 0</div>
+<br>
+<br>
+<div id="specialMessage" style="display: none; font-family: 'Comic Sans MS';">
+    A special message will be displayed when both cars have completed 
+    <span class="rainbow-text">4</span>
+    laps written using 
+    <span class="rainbow-text">bEzIeR cUrVeS!!!</span>
+</div>
+
+<button onClick="window.location.reload();">Rest
+        <span class="rainbow-text">4</span>
+    rt</button>
+
+<script>
+
+document.addEventListener("DOMContentLoaded", function() {
+    var canvas = document.getElementById('raceCanvas');
+    var ctx = canvas.getContext('2d');
+
+    var curveValue = 50;
+
+    // Initial car vars
+    let car1Speed = 0.01;
+    let car2Speed = 0.01;
+    // Angle for position on track (0 to 2 * PI)
+    let car1Start = 0;
+    let car2Start = 0;
+    let lastCar1Position = null;
+    let lastCar2Position = null;
+    let lapCountCar1 = -1;
+    let lapCountCar2 = -1;
+
+    var previousCar1Start = car1Start;
+    var previousCar2Start = car2Start;
+
+    let initialLapCar1 = true;
+    let initialLapCar2 = true;
+
+    const finishLineAngle = 0;
+
+
+    // NITROUS SHIT!!!
+    let nitrousCar1 = false;
+    let nitrousCar2 = false;
+    let nitrousLevelCar1 = 100; 
+    let nitrousLevelCar2 = 100; 
+    const nitrousDecreaseAmount = 1; // The amount of nitrous to decrease per frame/update when used.
+    const nitrousRechargeRate = 0.5; // The rate at which nitrous recharges per frame/update when not in use.
+
+    // Define the track parameters
+    var ovalWidth = 400;
+    var ovalHeight = 200;
+    var centerX = canvas.width / 2;
+    var centerY = canvas.height / 2;
+    const finishLineY = 0;
+
+    // Function to draw the race track
+    function drawRaceTrack() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Calculate adjusted oval dimensions based on curveValue
+        var adjustedOvalWidth = ovalWidth - (curveValue - 50); // Decrease width with higher curveValue
+        var adjustedOvalHeight = ovalHeight + (curveValue - 50); // Increase height with higher curveValue
+
+        // Define the four main points on the oval
+        var left = centerX - adjustedOvalWidth / 2;
+        var right = centerX + adjustedOvalWidth / 2;
+        var top = centerY - adjustedOvalHeight / 2;
+        var bottom = centerY + adjustedOvalHeight / 2;
+
+        // Define control points for the Bezier curves.
+        var controlOffsetHorizontal = adjustedOvalWidth / 3; // Control point offset for horizontal direction
+        var controlOffsetVertical = adjustedOvalHeight / 3; // Control point offset for vertical direction
+
+        // Upper left curve
+        ctx.beginPath();
+        ctx.moveTo(left, centerY);
+        ctx.bezierCurveTo(
+            left, centerY - controlOffsetVertical,
+            centerX - controlOffsetHorizontal, top,
+            centerX, top 
+        );
+        ctx.lineWidth = 60;
+        ctx.strokeStyle = 'grey'; 
+        ctx.stroke(); 
+
+        // Upper right curve
+        ctx.beginPath();
+        ctx.moveTo(centerX, top);
+        ctx.bezierCurveTo(
+            centerX + controlOffsetHorizontal, top, 
+            right, centerY - controlOffsetVertical, 
+            right, centerY 
+        );
+        ctx.strokeStyle = 'grey';
+        ctx.stroke(); 
+
+        // Lower right curve
+        ctx.beginPath();
+        ctx.moveTo(right, centerY);
+        ctx.bezierCurveTo(
+            right, centerY + controlOffsetVertical, 
+            centerX + controlOffsetHorizontal, bottom, 
+            centerX, bottom 
+        );
+        ctx.strokeStyle = 'grey'; 
+        ctx.stroke(); 
+
+        // Lower left curve
+        ctx.beginPath();
+        ctx.moveTo(centerX, bottom);
+        ctx.bezierCurveTo(
+            centerX - controlOffsetHorizontal, bottom,
+            left, centerY + controlOffsetVertical, 
+            left, centerY 
+        );
+        ctx.strokeStyle = '#d6b4fc';
+        ctx.stroke(); 
+    }
+
+    // Function to draw finish line
+    function drawFinishLine() {
+        // Constants for the finish line
+        const lineLength = 60; 
+        const trackStrokeWidth = 60; 
+        const finishLineHeight = 5; 
+
+        // Position of the line, which is at the rightmost point of the oval
+        var startX = centerX + ovalWidth / 2 - (curveValue + 50) / 2 + trackStrokeWidth / 2 - 12;
+        var startY = centerY;
+
+        // Number of segments and segment width for checkered pattern
+        const numSegments = 20;
+        const segmentWidth = lineLength / numSegments;
+        for (let i = 0; i < numSegments; i++) {
+            ctx.fillStyle = i % 2 === 0 ? "white" : "black"; 
+            ctx.fillRect(startX + i * segmentWidth, startY - finishLineHeight / 2, segmentWidth, finishLineHeight);
+        }
+        
+        ctx.strokeStyle = 'red';  
+        ctx.lineWidth = 1;  // Thickness of the line
+        ctx.beginPath();
+        ctx.moveTo(startX, startY - finishLineHeight / 2);
+        ctx.lineTo(startX + lineLength, startY - finishLineHeight / 2);
+        ctx.stroke();
+        
+    }
+
+    function checkLapCompletion() {
+        if (car1Start <= 0) {
+            car1Start += 2 * Math.PI; 
+            lapCountCar1++;
+            document.getElementById('lapCounterCar1').textContent = 'Red C4R L4PS: ' + lapCountCar1; // Update the display
+        }
+        if (car2Start <= 0) {
+            car2Start += 2 * Math.PI;
+            lapCountCar2++;
+            document.getElementById('lapCounterCar2').textContent = 'Blue C4R L4PS: ' + lapCountCar2;
+        }
+    }
+
+    function getPointOnTrack(angle, curveValue, offset = 0) {
+        // Calculate adjusted oval dimensions based on curveValue
+        var adjustedOvalWidth = ovalWidth - (curveValue - 50); // Decrease width with higher curveValue
+        var adjustedOvalHeight = ovalHeight + (curveValue - 50); // Increase height with higher curveValue
+        
+        // Calculate x and y coordinates on track based on angle
+        var x = centerX + (adjustedOvalWidth/2 + offset) * Math.cos(angle);
+        var y = centerY + (adjustedOvalHeight/2 + offset) * Math.sin(angle);
+
+        return {x: x, y: y};
+    }
+
+    function drawCar(angle, color) {
+        const carOffset1 = 22; 
+        const carOffset2 = -2;
+        const point = (color === "red") 
+            ? getPointOnTrack(angle, curveValue, carOffset1)
+            : getPointOnTrack(angle, curveValue, carOffset2);
+
+        const carLength = 30;
+        const carWidth = 15;
+        const wheelRadius = 4;
+
+        ctx.save();
+
+        ctx.translate(point.x, point.y); // Move the drawing origin to the car's center
+        ctx.rotate(angle + Math.PI/2);
+
+        ctx.fillStyle = color;
+        ctx.fillRect(-carLength/2, -carWidth/2, carLength, carWidth); // Body of car
+
+        // Draw the wheels
+        ctx.fillStyle = "black";
+        ctx.beginPath();
+        ctx.arc(-carLength/4, -carWidth/2, wheelRadius, 0, 2 * Math.PI);
+        ctx.arc(-carLength/4, carWidth/2, wheelRadius, 0, 2 * Math.PI);
+        ctx.arc(carLength/4, -carWidth/2, wheelRadius, 0, 2 * Math.PI);
+        ctx.arc(carLength/4, carWidth/2, wheelRadius, 0, 2 * Math.PI);
+        ctx.fill();
+
+        ctx.restore();
+    }
+
+    // NITROUS animation
+    function drawFlames(angle, offset) {
+        const point = getPointOnTrack(angle, curveValue, offset - 25);
+        const flameLength = 40;
+        const flameWidth = 10;
+        
+        ctx.save();
+        ctx.translate(point.x, point.y);
+        ctx.rotate(angle + Math.PI);
+
+        ctx.fillStyle = "orange";
+        ctx.beginPath();
+        ctx.moveTo(-flameLength/2, -flameWidth);
+        ctx.lineTo(0, -flameLength - 50);
+        ctx.lineTo(flameLength/2, -flameWidth);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.restore();
+    }
+
+
+    function updateNitrousBars() {
+        var bar1 = document.getElementById("nitrousBarCar1");
+        var bar2 = document.getElementById("nitrousBarCar2");
+
+        var nitrousPercentageCar1 = (nitrousLevelCar1 / 100) * 100;
+        var nitrousPercentageCar2 = (nitrousLevelCar2 / 100) * 100;
+
+        bar1.innerHTML = `<div class="nitrous-bar-inner" style="width: ${nitrousPercentageCar1}%"></div>`;
+        bar2.innerHTML = `<div class="nitrous-bar-inner" style="width: ${nitrousPercentageCar2}%"></div>`;
+    }
+
+    function displayEndScreen() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height); 
+
+        ctx.beginPath();
+        ctx.moveTo(180, 100); // this is the top of the '4'
+        ctx.lineTo(210, 100); // top right of the '4'
+        ctx.lineTo(180, 130); // bottom right
+        ctx.lineTo(180, 100); // back to the top
+        ctx.lineTo(180, 140); // middle bottom of the '4'
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(100, 100);  // starting point at the top of the "p"
+        ctx.bezierCurveTo(100, 130, 130, 130, 130, 100); // this creates the loop of the "p"
+        ctx.lineTo(130, 140);  // this creates the stem of the "p"
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(230, 100);  // starting point at the top of the "l"
+        ctx.lineTo(230, 140);  // bottom of the "l"
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(250, 100);  // start at the top left of the "z"
+        ctx.lineTo(280, 100);  // top right of the "z"
+        ctx.lineTo(250, 140);  // bottom left of the "z"
+        ctx.lineTo(280, 140);  // bottom right of the "z"
+        ctx.stroke();
+    }
+
+    function animateCar() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        drawRaceTrack(); // Redraw the track
+        drawFinishLine(); // Draw the finish line
+
+        // Draw the flames if nitrous is on
+        if (nitrousCar1 && nitrousLevelCar1 > 0) {
+            nitrousLevelCar1 -= nitrousDecreaseAmount;
+            drawFlames(car1Start, 47); 
+        } else if (!nitrousCar1 && nitrousLevelCar1 < 100) {
+            nitrousLevelCar1 += nitrousRechargeRate;
+        }
+        if (nitrousCar2 && nitrousLevelCar2 > 0) {
+            nitrousLevelCar2 -= nitrousDecreaseAmount;
+            drawFlames(car2Start, 22); 
+        } else if (!nitrousCar2 && nitrousLevelCar2 < 100) {
+            nitrousLevelCar2 += nitrousRechargeRate;
+        }
+
+        nitrousLevelCar1 = Math.min(Math.max(nitrousLevelCar1, 0), 100);
+        nitrousLevelCar2 = Math.min(Math.max(nitrousLevelCar2, 0), 100);
+
+        drawCar(car1Start, "red");
+        drawCar(car2Start, "blue");
+
+        car1Start -= car1Speed; 
+        car2Start -= car2Speed; 
+
+        
+        if (car1Start > 2 * Math.PI) {
+            car1Start = 0;
+        }
+        if (car2Start > 2 * Math.PI) {
+            car2Start = 0;
+        }
+
+        checkLapCompletion();
+        updateNitrousBars();
+
+        if (lapCountCar1 >= 4 && lapCountCar2 >= 4) {
+            displayEndScreen();
+            return;
+        }
+
+        previousCar1Start = car1Start;
+        previousCar2Start = car2Start;
+
+        requestAnimationFrame(animateCar);
+    }
+
+    updateNitrousBars();
+    function handleKeyDown(event) {
+    switch (event.key) {
+        case 'd':
+            car1Speed = 0.02;
+            nitrousCar1 = true;
+            break;
+        case 'a':
+            car2Speed = 0.02;
+            nitrousCar2 = true;
+            break;
+        
+        // Slow down turbo
+        case 'c':
+            car1Speed = 0.006;
+            nitrousCar1 = false;
+            break;
+        case 'z':
+            car2Speed = 0.006;
+            nitrousCar2 = false;
+            break;
+        }
+    }
+
+    function handleKeyUp(event) {
+        switch (event.key) {
+            case 'd':
+                car1Speed = 0.01;
+                nitrousCar1 = false;
+                break;
+            case 'a':
+                car2Speed = 0.01;
+                nitrousCar2 = false;
+                break;
+            case 'c':
+                car1Speed = 0.01;
+                nitrousCar1 = false;
+                break;
+            case 'z':
+                car2Speed = 0.01;
+                nitrousCar2 = false;
+                break;
+        }
+    }
+
+    document.getElementById('curveSlider').addEventListener('input', function(event) {
+        curveValue = parseInt(event.target.value);
+        drawRaceTrack(); // Redraw the track with the new curvature
+        drawFinishLine(); // Redraw finish line with new curvature
+    });
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('keyup', handleKeyUp);
+    document.getElementById('nitrousCar1').addEventListener('mousedown', function() {
+        if (nitrousLevelCar1 > 0) {
+            car1Speed = 0.02; // Double the speed
+            nitrousCar1 = true;
+        }
+    });
+    document.getElementById('nitrousCar1').addEventListener('mouseup', function() {
+        car1Speed = 0.01; // Reset to normal speed
+        nitrousCar1 = false;
+    });
+    document.getElementById('nitrousCar2').addEventListener('mousedown', function() {
+        if (nitrousLevelCar2 > 0) {
+            car2Speed = 0.02;
+            nitrousCar2 = true;
+        }
+    });
+    document.getElementById('nitrousCar2').addEventListener('mouseup', function() {
+        car2Speed = 0.01;
+        nitrousCar2 = false;
+    });
+    window.addEventListener('DOMContentLoaded', (event) => {
+        const messageDiv = document.getElementById('specialMessage');
+        if (messageDiv) {
+            messageDiv.style.display = 'block';
+        } else {
+            console.error('THIS SHIT BROKEN');
+        }
+    });
+
+
+    drawRaceTrack(); // Initial draw
+    animateCar(); // Start the car animation
+    
+});
+
+</script>
+</body>
+</html>
